@@ -47,6 +47,10 @@ type Config struct {
 	// client ID & client secret sent. The zero value means to
 	// auto-detect.
 	AuthStyle oauth2.AuthStyle
+
+	// Method optionally specifies the HTTP method to use,
+	// defaulting to "POST"
+	Method string
 }
 
 // Token uses client credentials to retrieve a token.
@@ -73,6 +77,10 @@ func (c *Config) Client(ctx context.Context) *http.Client {
 //
 // Most users will use Config.Client instead.
 func (c *Config) TokenSource(ctx context.Context) oauth2.TokenSource {
+	if c.Method == "" {
+		c.Method = "POST"
+	}
+
 	source := &tokenSource{
 		ctx:  ctx,
 		conf: c,
@@ -103,7 +111,7 @@ func (c *tokenSource) Token() (*oauth2.Token, error) {
 		v[k] = p
 	}
 
-	tk, err := internal.RetrieveToken(c.ctx, c.conf.ClientID, c.conf.ClientSecret, c.conf.TokenURL, v, internal.AuthStyle(c.conf.AuthStyle))
+	tk, err := internal.RetrieveToken(c.ctx, c.conf.ClientID, c.conf.ClientSecret, c.conf.TokenURL, v, internal.AuthStyle(c.conf.AuthStyle), c.conf.Method)
 	if err != nil {
 		if rErr, ok := err.(*internal.RetrieveError); ok {
 			return nil, (*oauth2.RetrieveError)(rErr)
